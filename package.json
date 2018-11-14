@@ -1,5 +1,5 @@
 {
-  "name": "simplelight",
+  "name": "asdasdasd",
   "version": "0.0.1",
   "private": true,
   "description": "New Swagger API Project",
@@ -9,7 +9,7 @@
   "main": "app.js",
   "dependencies": {
     "express": "^4.12.3",
-    "swagger-express-mw": "^0.7.0"
+    "swagger-express-mw": "^0.1.0"
   },
   "devDependencies": {
     "should": "^7.1.0",
