@@ -1,57 +1,1122 @@
 swagger: "2.0"
 info:
-  version: "0.0.1"
-  title: Hello World App
-# during dev, should point to your local machine
+  version: "1.0.0"
+  title: Simple Light
+  description: "Simple application (OTP) for API course at University of Szeged"
+  contact: { 
+    "name": "Berki Tamás",
+    "email": "Berki.Tamas.Jozsef@stud.u-szeged.hu",
+    "url": "http://btj.hu"
+  }
+  license: {
+    "name": "MIT",
+    "url": "https://github.com/berkitamas/simplelight/blob/master/LICENSE"
+  }
 host: localhost:10010
-# basePath prefixes all resource paths 
 basePath: /
-# 
 schemes:
-  # tip: remove http to make production-grade
   - http
-  - https
-# format of bodies a client can send (Content-Type)
 consumes:
   - application/json
-# format of the responses to the client (Accepts)
 produces:
   - application/json
+tags:
+  - name: report
+    description: Reports about application state
+  - name: user
+    description: User operations
+  - name: card
+    description: Card operations
+  - name: motorway
+    description: Motorway-reladted operations
+  - name: parking
+    description: Parking-related operations
+  - name: cinema
+    description: Cinema-related operations
+securityDefinitions:
+  ApiKeyAuth:
+    type: apiKey
+    in: header
+    name: X-Session-ID
+security:
+  - ApiKeyAuth: []
 paths:
-  /hello:
-    # binds a127 app logic to a route
-    x-swagger-router-controller: hello_world
-    get:
-      description: Returns 'Hello' to the caller
-      # used as the method name of the controller
-      operationId: hello
+  # Authentication #
+  /authentication/login:
+    x-swagger-router-controller: authentication
+    post:
+      tags:
+        - user
+      summary: Log in user
+      description: User login with username and password
+      operationId: login
+      security: []
       parameters:
-        - name: name
-          in: query
-          description: The name of the person to whom to say hello
-          required: false
-          type: string
+        - name: credentials
+          in: body
+          description: Username and password
+          required: true
+          schema: 
+            $ref: "#/definitions/Credentials"
       responses:
-        "200":
-          description: Success
+        200:
+          description: Successfully logged in
           schema:
-            # a pointer to a definition
-            $ref: "#/definitions/HelloWorldResponse"
-        # responses may fall through to errors
+            type: string
+            title: sessionID
+        400:
+          description: Request validation failed
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        403:
+          description: Username or password is incorrect
+          schema:
+            $ref: "#/definitions/ErrorResponse"
         default:
           description: Error
           schema:
             $ref: "#/definitions/ErrorResponse"
+  /authentication/logout:
+    x-swagger-router-controller: authentication
+    post:
+      tags:
+        - user
+      summary: Log out user
+      description: Logs out user with a given session ID
+      operationId: logout
+      responses:
+        204:
+          description: Successfully logged out
+        400:
+          description: Request validation failed
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        401:
+          description: User is not logged in
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+
+  # User management #
+  /users:
+    x-swagger-router-controller: users
+    post:
+      tags:
+        - user
+      summary: Register user
+      description: Creates user with given paramteres
+      operationId: register
+      security: []
+      parameters:
+        - name: user
+          in: body
+          description: Details of the user
+          required: true
+          schema:
+            $ref: "#/definitions/Registration" 
+      responses:
+        201:
+          description: Successfully created
+          schema:
+            $ref: "#/definitions/User"
+        400:
+          description: Request validation failed
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        403:
+          description: User is not logged in
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+
+  /users/{userId}:
+    x-swagger-router-controller: users
+    parameters:
+      - name: userId
+        in: path
+        description: ID of the user
+        required: true
+        type: string
+    get:
+      tags:
+        - user
+      summary: Retrieve a user
+      description: Retrieves a user with a given ID
+      operationId: retrieveUser
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/User"
+        400:
+          description: Request validation failed
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        403:
+          description: User is not logged in
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        404:
+          description: User with given ID not found
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+          
+  # Card management #
+  /users/{userId}/card:
+    x-swagger-router-controller: cards
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: ID of the user
+        type: string
+    get:
+      summary: Retrieve all card of user
+      description: Returns all card of a user
+      operationId: retrieveAllCard
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/Card"
+        400:
+          description: Request validation failed
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        403:
+          description: User is not logged in
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        404:
+          description: User with given ID not found
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+    post:
+      summary: Add card to user
+      description: Adds a card to the user account
+      operationId: addCard
+      parameters:
+        - name: card
+          in: body
+          description: Details of the card
+          schema:
+            $ref: "#/definitions/Card"
+      responses:
+        201:
+          description: Successfully created
+        400:
+          description: Request validation failed
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        403:
+          description: User is not logged in
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        404:
+          description: User with given ID not found
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+
+  /users/{userId}/cards/{cardId}:
+    x-swagger-router-controller: cards
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: ID of the user
+        type: string
+      - name: cardId
+        in: path
+        required: true
+        description: ID of the card
+        type: string
+    get:
+      tags:
+      - card
+      - user
+      summary: Retrieve card
+      description: Returns the card of the given id
+      operationId: retrieveCard
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/Card"
+        400:
+          description: Request validation failed
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        403:
+          description: User is not logged in
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        404:
+          description: User or card with given ID not found
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+    put:
+      tags:
+        - card
+        - user
+      summary: Update card details
+      description: Updates the card of the given id
+      operationId: updateCard
+      parameters:
+        - name: card
+          in: body
+          required: true
+          description: Details of the new card
+          schema:
+            $ref: "#/definitions/Card"
+      responses:
+        200:
+          description: Successfully changed
+          schema:
+            $ref: "#/definitions/Card"
+        400:
+          description: Request validation failed
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        403:
+          description: User is not logged in
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        404:
+          description: User or card with given ID not found
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+    delete:
+      operationId: deleteCard
+      tags:
+        - card
+      summary: Delete card
+      description: Deletes the card of the given id
+      responses:
+        204:
+          description: Successfully deleted
+        400:
+          description: Request validation failed
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        403:
+          description: User is not logged in
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        404:
+          description: User or card with given ID not found
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+          
+  # Services #
+  /users/{userId}/motorwayTickets:
+    x-swagger-router-controller: motorways
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: ID of the user
+        type: string
+    get:
+      tags:
+        - motorway
+        - user
+      summary: Retrieve all motorway ticket
+      description: Return all motorway tickest (past one also) of the given user
+      operationId: retrieveAllMotorwayTicket
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/MotorwayTicket"
+        400:
+          description: Request validation failed
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        403:
+          description: User is not logged in
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        404:
+          description: User with given ID not found
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+    post:
+      tags:
+        - motorway
+        - user
+      summary: Add motorway ticket
+      description: Adds a new motorway ticket for the given user
+      operationId: addMotorwayTicket
+      parameters:
+        - name: ticket
+          in: body
+          required: true
+          description: Details of the ticket
+          schema:
+            $ref: "#/definitions/MotorwayTicket"
+      responses:
+        201:
+          description: Successfully created
+        400:
+          description: Request validation failed
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        403:
+          description: User is not logged in
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        404:
+          description: User with given ID not found
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+    
+  /users/{userId}/motorwayTickets/{ticketId}:
+    x-swagger-router-controller: motorways
+    parameters:
+      - name: ticketId
+        in: path
+        required: true
+        description: ID of the ticket
+        type: string
+      - name: userId
+        in: path
+        required: true
+        description: ID of the user
+        type: string
+    get:
+      tags:
+        - motorway
+        - user
+      summary: Retrieve a motorway ticket
+      description: Retrieves tha motorway ticket of the user with the given ids
+      operationId: retrieveMotorwayTicket
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/MotorwayTicket"
+        400:
+          description: Request validation failed
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        403:
+          description: User is not logged in
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        404:
+          description: User with given ID not found
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+    
+  /users/{userId}/parkingTickets:
+    x-swagger-router-controller: parkings
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: ID of the user
+        type: string
+    get:
+      tags:
+        - parking
+        - user
+      summary: Retrieve all parking tickets
+      description: Returns all parking tickets of the given user
+      operationId: retrieveAllParkingTicket
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/ParkingTicket"
+        403:
+          description: User is not logged in
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        404:
+          description: User with given ID not found
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+    post:
+      tags:
+        - parking
+        - user
+      summary: Add parking ticket
+      description: Creates a new parking ticket for the given user 
+      operationId: addParkingTicket
+      parameters:
+        - name: ticket
+          in: body
+          required: true
+          description: Details of the parking ticket
+          schema:
+            $ref: "#/definitions/ParkingTicket"
+      responses:
+        201:
+          description: Successfully created
+        400:
+          description: Request validation failed
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        403:
+          description: User is not logged in
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        404:
+          description: User with given ID not found
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+
+  /users/{userId}/parkingTickets/{ticketId}:
+    x-swagger-router-controller: parkings
+    parameters:
+      - name: ticketId
+        in: path
+        required: true
+        description: ID of the ticket
+        type: string
+      - name: userId
+        in: path
+        required: true
+        description: ID of the user
+        type: string
+    get:
+      tags:
+        - parking
+        - user
+      summary: Retrieve parking ticket
+      description: Returns a ticket from the given ids
+      operationId: retrieveParkingTicket
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/ParkingTicket"
+        400:
+          description: Request validation failed
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        403:
+          description: User is not logged in
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        404:
+          description: User or ticket with given ID not found
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+            
+  /users/{userId}/parkingTickets/{ticketId}/stop:
+    x-swagger-router-controller: parkings
+    parameters:
+      - name: ticketId
+        in: path
+        required: true
+        description: ID of the ticket
+        type: string
+      - name: userId
+        in: path
+        required: true
+        description: ID of the user
+        type: string
+    post:
+      tags:
+        - parking
+        - user
+      summary: Stop parking ticket
+      description: Stops the given parking ticket of the user and bills the amount
+      operationId: stopParkingTicket
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/ParkingTicket"
+        400:
+          description: Request validation failed
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        403:
+          description: User is not logged in
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        404:
+          description: User or ticket with given ID not found
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+ 
+  /users/{userId}/cinemaTickets:
+    x-swagger-router-controller: cinemas
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: ID of the user
+        type: string
+    get:
+      tags:
+        - cinema
+      summary: Retrieve all cinema tickets
+      description: Returns all cinema tickets of the given user
+      operationId: retrieveAllCinemaTicket
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/CinemaTicket"
+        400:
+          description: Request validation failed
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        403:
+          description: User is not logged in
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        404:
+          description: User with given ID not found
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+    post:
+      tags:
+        - cinema
+      summary: Add cinema ticket
+      description: Creates a cinema ticket for the user
+      operationId: addCinemaTicket
+      parameters:
+        - name: ticket
+          in: body
+          required: true
+          description: Details of the cinema ticket
+          schema:
+            $ref: "#/definitions/CinemaTicket"
+      responses:
+        200:
+          description: OK
+        400:
+          description: Request validation failed
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        403:
+          description: User is not logged in
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        404:
+          description: User with given ID not found
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+  /users/{userId}/cinemaTickets/{ticketId}:
+    x-swagger-router-controller: cinemas
+    parameters:
+      - name: ticketId
+        in: path
+        required: true
+        description: ID of the ticket
+        type: string
+      - name: userId
+        in: path
+        required: true
+        description: ID of the user
+        type: string
+    get:
+      tags:
+        - cinema
+      summary: Retrieve cinema ticket
+      description: Returns the cinema ticket from the given user and ticket ID
+      operationId: retrieveCinemaTicket
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/CinemaTicket"
+        400:
+          description: Request validation failed
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        403:
+          description: User is not logged in
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        404:
+          description: User or ticket with given ID not found
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+    delete:
+      tags:
+        - cinema
+      summary: Delete cinema ticket
+      description: Deletes cinema ticket of the given user
+      operationId: deleteCinemaTicket
+      responses:
+        204:
+          description: Successfully deleted
+        400:
+          description: Request validation failed
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        403:
+          description: User is not logged in
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        404:
+          description: User or ticket with given ID not found
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+    
+  /motorways:
+    x-swagger-router-controller: motorways
+    get:
+      summary: Retrieve all motorway price category
+      description: Returns all motorway price category
+      security: []
+      operationId: retrieveAllMotorwayPriceCategory
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/Motorway"
+    
+  /parkings:
+    x-swagger-router-controller: parkings
+    get:
+      summary: Retrieve all parking city
+      description: Returns all of the cities where the user can park
+      security: []
+      operationId: retrieveAllParkingCity
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/City"
+  /parkings/{cityId}:
+    x-swagger-router-controller: parkings
+    parameters:
+      - name: cityId
+        in: path
+        required: true
+        description: ID of the city
+        type: string
+    get:
+      tags:
+        - parking
+      security: []
+      summary: Retrieve all parking spot in city
+      description: Returns all parking spot in the city
+      operationId: retrieveAllParkingSpotInCity
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/ParkingSpot"
+        404:
+          description: City not found
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+
+  /cinemas:
+    x-swagger-router-controller: cinemas
+    get:
+      tags:
+        - cinema
+      #security: []
+      summary: Retrieve all cinema
+      description: Returns all of the cinemas
+      operationId: retrieveAllCinema
+      parameters:
+        - name: city
+          in: query
+          required: false
+          type: string
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/CinemaSummary"
+  /cinemas/{cinemaId}:
+    x-swagger-router-controller: cinemas
+    parameters:
+      - name: cinemaId
+        in: path
+        required: true
+        description: ID of the cinema
+        type: string
+    get:
+      tags:
+        - cinema
+      security: []
+      summary: Retrieve all show in cinema
+      description: Returns all of the shows in a given cinema
+      operationId: retrieveAllShowInCinema
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/Cinema"
+        404:
+          description: Cinema not found
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+  /health:
+    x-swagger-router-controller: reports
+    get:
+      tags:
+        - report
+      security: []
+      summary: Health check
+      description: Returns 204 if the service is healthy
+      operationId: healthCheck
+      responses:
+        204:
+          description: OK
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+    
+
   /swagger:
     x-swagger-pipe: swagger_raw
 # complex objects have schema definitions
 definitions:
-  HelloWorldResponse:
+  Registration:
     required:
-      - message
+      - username
+      - email
+      - password
+      - firstName
+      - lastName
     properties:
-      message:
+      username:
         type: string
+      email:
+        type: string
+      password:
+        type: string
+        format: password
+      firstName:
+        type: string
+      lastName:
+        type: string
+  User:
+    properties:
+      _id:
+        type: string
+      username:
+        type: string
+      email:
+        type: string
+      firstName:
+        type: string
+      lastName:
+        type: string
+      motorwayTickets:
+        type: array
+        items:
+          $ref: "#/definitions/MotorwayTicket"
+      parkingTickets:
+        type: array
+        items:
+          $ref: "#/definitions/ParkingTicket"
+      cinemaTickets:
+        type: array
+        items:
+          $ref: "#/definitions/CinemaTicket"
+  Credentials:
+    required:
+      - username
+      - password
+    properties:
+      username:
+        type: string
+      password:
+        type: string
+        format: password
+
+  Card:
+    required:
+      - number
+      - expirationMonth
+      - expirationYear
+      - cvv
+    properties:
+      _id:
+        type: string
+      bank:
+        type: string
+      number:
+        type: number
+      expirationMonth:
+        type: number
+      expirationYear:
+        type: number
+      cvv:
+        type: number
+
+  MotorwayTicket:
+    required:
+      - cardId
+      - licensePlate
+      - priceCategory
+    properties:
+      _id:
+        type: string
+      cardId:
+        type: string
+      licensePlate:
+        type: string
+      priceCategory:
+        type: string
+        enum: [Weekly, Monthly, Yearly]
+      purchaseDate:
+        type: string
+        format: date-time
+  ParkingTicket:
+    required:
+      - cardId
+      - licensePlate
+      - city
+      - zone
+    properties:
+      _id:
+        type: string
+      cardId:
+        type: string
+      licensePlate:
+        type: string
+      city:
+        type: string
+      zone:
+        type: string
+      price:
+        type: string
+      stopTime:
+        type: string
+        format: date-time
+      purchaseDate:
+        type: string
+        format: date-time
+  CinemaTicket:
+    required:
+      - cardId
+      - cinemaId
+      - hall
+      - startTime
+      - row
+      - seat
+    properties:
+      _id:
+        type: string
+      cardId:
+        type: string
+      cinemaId:
+        type: string
+      price:
+        type: string
+      hall:
+        type: string
+      startTime:
+        type: string
+        format: date-time
+      row:
+        type: number
+      seat:
+        type: number
+      purchaseDate:
+        type: string
+        format: date-time
+
+  Motorway:
+    properties:
+      _id:
+        type: string
+      priceCategory:
+        type: string
+        enum: [Weekly, Monthly, Yearly]
+      price:
+        type: string
+      duration:
+        type: number
+        format: days
+  City:
+    properties:
+      _id:
+        type: string
+      name:
+        type: string
+      posX:
+        type: number
+      posY:
+        type: number
+  ParkingSpot:
+    properties:
+      _id:
+        type: string
+      city:
+        $ref: "#/definitions/City"
+      zone:
+        type: string
+      price:
+        type: string
+        format: per quarter hour
+      areaPoly:
+        type: array
+        items:
+          $ref: "#/definitions/Point"
+  Point:
+    properties:
+      x:
+        type: number
+      y:
+        type: number
+  CinemaSummary:
+    properties:
+      _id:
+        type: string
+      cinemaName:
+        type: string
+      zip:
+        type: string
+      city: 
+        type: string
+      street:
+        type: string
+      address:
+        type: string
+  Cinema:
+    properties:
+      _id:
+        type: string
+      summary:
+        $ref: "#/definitions/CinemaSummary"
+      shows:
+        type: array
+        items:
+          $ref: "#/definitions/CinemaShow"
+  Movie:
+    properties:
+      name:
+        type: string
+      summary:
+        type: string
+      coverUrl:
+        type: string
+      imdbLink:
+        type: string
+  CinemaShow:
+    properties:
+      startTime:
+        type: string
+        format: date-time
+      movie:
+        $ref: "#/definitions/Movie"
+      price:
+        type: string
+      hall:
+        type: number
+      maxRows:
+        type: number
+      maxSeatsPerRow:
+        type: number
+      freePositions:
+        type: array
+        items:
+          $ref: "#/definitions/CinemaShowSeat"
+  CinemaShowSeat:
+    properties:
+      row:
+        type: number
+      seat:
+        type: number
   ErrorResponse:
     required:
       - message
