@@ -220,6 +220,8 @@ paths:
       responses:
         201:
           description: Successfully created
+          schema:
+            $ref: "#/definitions/Card"
         400:
           description: Request validation failed
           schema:
@@ -468,7 +470,7 @@ paths:
         - user
       summary: Retrieve all parking tickets
       description: Returns all parking tickets of the given user
-      operationId: retrieveAllParkingTicket
+      operationId: retrieveAllParkingTickets
       responses:
         200:
           description: OK
@@ -744,6 +746,8 @@ paths:
   /motorways:
     x-swagger-router-controller: motorways
     get:
+      tags:
+        - motorway
       summary: Retrieve all motorway price category
       description: Returns all motorway price category
       security: []
@@ -759,6 +763,8 @@ paths:
   /parkings:
     x-swagger-router-controller: parkings
     get:
+      tags:
+        - parking
       summary: Retrieve all parking city
       description: Returns all of the cities where the user can park
       security: []
@@ -802,7 +808,7 @@ paths:
     get:
       tags:
         - cinema
-      #security: []
+      security: []
       summary: Retrieve all cinema
       description: Returns all of the cinemas
       operationId: retrieveAllCinema
@@ -924,23 +930,28 @@ definitions:
 
   Card:
     required:
-      - number
+      - cardholderName
+      - cardNumber
       - expirationMonth
       - expirationYear
       - cvv
     properties:
       _id:
         type: string
+      userId:
+        type: string
       bank:
         type: string
-      number:
-        type: number
+      cardholderName:
+        type: string
+      cardNumber:
+        type: string
       expirationMonth:
-        type: number
+        type: string
       expirationYear:
-        type: number
+        type: string
       cvv:
-        type: number
+        type: string
 
   MotorwayTicket:
     required:
@@ -949,6 +960,8 @@ definitions:
       - priceCategory
     properties:
       _id:
+        type: string
+      userId:
         type: string
       cardId:
         type: string
@@ -964,18 +977,17 @@ definitions:
     required:
       - cardId
       - licensePlate
-      - city
-      - zone
+      - zoneId
     properties:
       _id:
+        type: string
+      userId:
         type: string
       cardId:
         type: string
       licensePlate:
         type: string
-      city:
-        type: string
-      zone:
+      zoneId:
         type: string
       price:
         type: string
@@ -988,25 +1000,18 @@ definitions:
   CinemaTicket:
     required:
       - cardId
-      - cinemaId
-      - hall
-      - startTime
+      - showId
       - row
       - seat
     properties:
       _id:
         type: string
+      userId:
+        type: string
       cardId:
         type: string
-      cinemaId:
+      showId:
         type: string
-      price:
-        type: string
-      hall:
-        type: string
-      startTime:
-        type: string
-        format: date-time
       row:
         type: number
       seat:
@@ -1074,8 +1079,6 @@ definitions:
         type: string
   Cinema:
     properties:
-      _id:
-        type: string
       summary:
         $ref: "#/definitions/CinemaSummary"
       shows:
@@ -1094,6 +1097,8 @@ definitions:
         type: string
   CinemaShow:
     properties:
+      _id:
+        type: string
       startTime:
         type: string
         format: date-time
@@ -1102,7 +1107,7 @@ definitions:
       price:
         type: string
       hall:
-        type: number
+        type: string
       maxRows:
         type: number
       maxSeatsPerRow:
